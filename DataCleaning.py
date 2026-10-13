@@ -1,6 +1,7 @@
 import pandas as pd
 import csv
-
+import fasttext
+import matplotlib.pyplot as plt
 
 entry_columns = [
     "EntryID", # None-nullable, No missing values
@@ -15,6 +16,31 @@ entry_columns = [
     "ImgURL", #Nullable, Mostly missing
     "NumVideo", #Nullable, A few missing values
     "VideoURL" #Nullable, Mostly missing
+]
+
+entry_columns_cleaned = [
+    "EntryID",
+    "PostedBy",
+    "SourceName",
+    "SourceURL",
+    "Text",
+    "Numlmg",
+    "ImgURL",
+    "NumVideo",
+    "VideoURL"
+]
+
+entry_columns_with_language = [
+    "EntryID",
+    "PostedBy",
+    "SourceName",
+    "SourceURL",
+    "Text",
+    "NumImg",
+    "ImgURL",
+    "NumVideo",
+    "VideoURL",
+    "Language"
 ]
 
 comment_columns = [
@@ -72,71 +98,81 @@ keys = {
    "Services": ["UserID", "ServiceID"]
 }
 
-entries1 = pd.read_csv(
-    "entries1.csv",
+#entries1 = pd.read_csv(
+#    "entries1.csv",
+#    sep="\t",
+#    header=None,
+#    na_values=r"\N"
+#)
+
+#entries2 = pd.read_csv(
+#    "entries2.csv",
+#    sep="\t",
+#    header=None,
+#    na_values=r"\N"
+#)
+
+#entries3 = pd.read_csv(
+#    "entries3.csv",
+#    sep="\t",
+#    header=None,
+#    na_values=r"\N"
+#)
+
+#entries = pd.concat(
+#    [entries1, entries2, entries3],
+#    ignore_index=True
+#)
+#entries.columns = entry_columns
+#entries.drop(columns=["GeoX", "GeoY", "Timestamp"], inplace=True)
+
+
+entries_cleaned = pd.read_csv(
+    "entries_cleaned.csv",
     sep="\t",
     header=None,
     na_values=r"\N"
 )
-
-entries2 = pd.read_csv(
-    "entries2.csv",
-    sep="\t",
-    header=None,
-    na_values=r"\N"
-)
-
-entries3 = pd.read_csv(
-    "entries3.csv",
-    sep="\t",
-    header=None,
-    na_values=r"\N"
-)
-
-entries = pd.concat(
-    [entries1, entries2, entries3],
-    ignore_index=True
-)
-entries.columns = entry_columns
-entries.drop(columns=["GeoX", "GeoY", "Timestamp"], inplace=True)
-
-comments = pd.read_csv(
-    "commentAugSept.csv",
-    sep="\t",
-    header=None,
-    na_values=r"\N"
-)
-comments.columns = comment_columns
-comments.drop(columns=["GeoX", "GeoY", "Timestamp"], inplace=True)
+entries_cleaned.columns = entry_columns_cleaned
 
 
-likes = pd.read_csv(
-    "likes.csv",
-    sep="\t",
-    header=None,
-    na_values=r"\N"
-)
-likes.columns = likes_columns
-likes.drop(columns=["Timestamp"], inplace=True)
+#comments = pd.read_csv(
+#    "commentAugSept.csv",
+#    sep="\t",
+#    header=None,
+#    na_values=r"\N"
+#)
+#comments.columns = comment_columns
+#comments.drop(columns=["GeoX", "GeoY", "Timestamp"], inplace=True)
 
-users = pd.read_csv(
-    "users.csv",
-    sep="|",
-    header=None,
-    na_values="null",
-    quoting=csv.QUOTE_NONE
-)
-users.columns = users_columns
-users.drop(columns=["Reserved field", "Description"], inplace=True)
 
-following = pd.read_csv(
-    "followingAugSept.csv",
-    sep="\t",
-    header=None,
-    na_values=r"\N"
-)
-following.columns = following_columns
-following.drop(columns=["Timestamp"], inplace=True)
+#likes = pd.read_csv(
+#    "likes.csv",
+#    sep="\t",
+#    header=None,
+#    na_values=r"\N"
+#)
+#likes.columns = likes_columns
+#likes.drop(columns=["Timestamp"], inplace=True)
+
+#users = pd.read_csv(
+#    "users.csv",
+#    sep="|",
+#    header=None,
+#    na_values="null",
+#    quoting=csv.QUOTE_NONE
+#)
+#users.columns = users_columns
+#users.drop(columns=["Reserved field", "Description"], inplace=True)
+
+#following = pd.read_csv(
+#    "followingAugSept.csv",
+#    sep="\t",
+#    header=None,
+#    na_values=r"\N"
+#)
+#following.columns = following_columns
+#following.drop(columns=["Timestamp"], inplace=True)
 
 
 #services = pd.read_csv(
@@ -262,24 +298,24 @@ following.drop(columns=["Timestamp"], inplace=True)
 
 
 # Remove following relationships with invalid user references
-before = len(following)
+#before = len(following)
 
-following = following[
-    following["FollowedID"].isin(users["ID"]) &
-    following["FollowerID"].isin(users["ID"])
-].copy()
+#following = following[
+#    following["FollowedID"].isin(users["ID"]) &
+#    following["FollowerID"].isin(users["ID"])
+#].copy()
 
-print(f"Removed following relationships: {before - len(following):,}")
-print(f"Remaining relationships: {len(following):,}")
+#print(f"Removed following relationships: {before - len(following):,}")
+#print(f"Remaining relationships: {len(following):,}")
 
 # Save cleaned following dataset
-following.to_csv(
-    "following_cleaned.csv",
-    sep="\t",
-    header=False,
-    index=False,
-    na_rep=r"\N"
-)
+#following.to_csv(
+#    "following_cleaned.csv",
+#    sep="\t",
+#    header=False,
+#    index=False,
+#    na_rep=r"\N"
+#)
 
 
 # Check which entries reference an existing user
@@ -368,3 +404,78 @@ following.to_csv(
 
 #for row in bad_rows:
 #    print(row)
+
+
+
+
+
+
+# Load language detection model
+#model = fasttext.load_model("lid.176.ftz")
+
+#def detect_language(text):
+#    if pd.isna(text):
+#        return "unknown"
+
+    # Convert to string and remove line breaks/extra spaces
+#    text = str(text).replace("\n", " ").strip()
+
+    # Very short texts are unreliable for language detection
+#    if len(text) < 10:
+#        return "unknown"
+
+#    prediction = model.predict(text, k=1)
+
+    # Example: "__label__en" -> "en"
+#    language = prediction[0][0].replace("__label__", "")
+
+#    return language
+
+
+
+#entries_cleaned["Language"] = entries_cleaned["Text"].apply(detect_language)
+
+
+#language_counts = entries_cleaned["Language"].value_counts()
+
+#print(language_counts)
+
+
+
+# Save result
+#entries_cleaned.to_csv(
+#    "entries_with_language.csv",
+#    sep="\t",
+#    header=False,
+#    index=False,
+#    na_rep=r"\N"
+#)
+
+
+# Load entries where language has already been detected
+entries = pd.read_csv(
+    "entries_with_language.csv",
+    sep="\t",
+    header=None,
+    names=entry_columns_with_language,
+    na_values=r"\N"
+)
+
+# Count entries per language
+language_counts = entries["Language"].value_counts()
+
+# Calculate percentage for top 10 languages
+language_percent = (
+    language_counts.head(10) / language_counts.sum() * 100
+)
+
+# Plot
+language_percent.plot(kind="bar")
+
+plt.title("Top 10 Languages in Entries")
+plt.xlabel("Language")
+plt.ylabel("Percentage of Entries (%)")
+plt.xticks(rotation=45)
+plt.tight_layout()
+
+plt.show()
